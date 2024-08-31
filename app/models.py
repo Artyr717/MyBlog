@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from hashlib import md5
 from typing import Optional
 
@@ -7,7 +7,7 @@ import sqlalchemy.orm as so
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from app import db, login
+from app import db, login, moscow_tz
 
 
 class User(UserMixin, db.Model):
@@ -17,10 +17,9 @@ class User(UserMixin, db.Model):
     password_hash: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
     is_admin: so.Mapped[bool] = so.mapped_column(default=False)
     posts: so.WriteOnlyMapped['Post'] = so.relationship(back_populates='author')
-    comments: so.WriteOnlyMapped['Comment'] = so.relationship(back_populates='author')
     about_me: so.Mapped[Optional[str]] = so.mapped_column(sa.String(140))
     last_seen: so.Mapped[Optional[datetime]] = so.mapped_column(
-        default=lambda: datetime.now(timezone.utc))
+        default=lambda: datetime.now(moscow_tz))
 
     def __repr__(self):
         return '<User {}>'.format(self.username)
@@ -43,38 +42,20 @@ class User(UserMixin, db.Model):
 
 class Post(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
-    title: so.Mapped[str] = so.mapped_column(sa.String(120))
-    body: so.Mapped[str] = so.mapped_column(sa.String(420))
+    title: so.Mapped[str] = so.mapped_column(sa.String(60))
+    preview: so.Mapped[str] = so.mapped_column(sa.String(120))
+    body: so.Mapped[str] = so.mapped_column(sa.String(420), nullable=False)
     timestamp: so.Mapped[datetime] = so.mapped_column(
-        index=True, default=lambda: datetime.now(timezone.utc))
+        index=True, default=lambda: datetime.now(moscow_tz))
     user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id), index=True)
-    write_comments: so.Mapped[bool] = so.mapped_column(default=False)
-    comments: so.WriteOnlyMapped['Comment'] = so.relationship(back_populates='post')
-    author: so.Mapped[User] = so.relationship(back_populates='posts')
+
+    author: so.Mapped[User] = so.relationship('User', back_populates='posts')
 
     def __repr__(self):
         return '<Post {}>'.format(self.body)
 
     def formatted_timestamp(self):
         return self.timestamp.strftime('%d.%m.%Y %H:%M')
-
-
-class Comment(db.Model):
-    id: so.Mapped[int] = so.mapped_column(primary_key=True)
-    content: so.Mapped[str] = so.mapped_column(sa.String(140))
-    timestamp: so.Mapped[datetime] = so.mapped_column(
-        index=True, default=lambda: datetime.now(timezone.utc))
-    user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id), index=True)
-    post_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Post.id), index=True)
-    post: so.Mapped['Post'] = so.relationship(back_populates='comments')
-    author: so.Mapped[User] = so.relationship(back_populates='comments')
-
-    def __repr__(self):
-        return '<Comment {}>'.format(self.content)
-
-    def formatted_timestamp(self):
-        return self.timestamp.strftime('%d.%m.%Y %H:%M')
-
 
 @login.user_loader
 def load_user(id):

@@ -1,48 +1,46 @@
 {% extends "base.html" %}
 
-{% block title %}Главная{% endblock %}
+{% block title %}Home{% endblock %}
 
 {% block content %}
-{% if posts.items %}
 <div class="container mt-5">
+    {% if posts.items %}
     <h1 class="text-center mb-4">Posts</h1>
-    <div class="row">
+    <div class="row justify-content-center">
         {% for post in posts.items %}
-        <div class="col-md-12 mb-4">
-            <div class="card" style="max-width: 600px; margin: 0 auto;">
-                <!-- Постер поста -->
+        <div class="col-md-8 mb-4">
+            <div class="card shadow-lg border-light rounded-4" style="transition: transform 0.3s, box-shadow 0.3s;">
                 {% if post.image %}
-                <img src="{{ post.image }}" class="card-img-top" alt="{{ post.title }}">
+                <img src="{{ post.image }}" class="card-img-top rounded-top-4" alt="{{ post.title }}">
                 {% endif %}
-
-                <!-- Заголовок и дата -->
-                <div class="card-header bg-light border-bottom">
-                    <div class="d-flex flex-column align-items-center">
-                        <h5 class="card-title text-center mb-1">{{ post.title }}</h5>
-                        <small class="text-muted">{{ post.formatted_timestamp() }}</small>
-                    </div>
-                </div>
-
-                <!-- Содержимое карточки -->
                 <div class="card-body">
-                    <p class="card-text">{{ post.body | truncate(100, True, '...') | safe }}</p>
+                    <h5 class="card-title">{{ post.title }}</h5>
+                    <p class="card-text">{{ post.preview }}</p>
                 </div>
-
-                <!-- Кнопка "Читать далее" справа -->
-                <div class="card-footer d-flex justify-content-end">
-                    <a href="{{ url_for('post_detail', post_id=post.id) }}" class="btn btn-primary">Read more</a>
+                <div class="card-footer bg-light text-muted d-flex justify-content-between align-items-center rounded-bottom-4">
+                    <small class="text-muted">
+                        <i class="fas fa-calendar-alt"></i> {{ post.formatted_timestamp() }} |
+                        <i class="fas fa-user"></i>
+                        <a href="{{ url_for('user', username=post.author.username) }}" class="text-decoration-none">
+                            {{ post.author.username }}
+                        </a>
+                    </small>
+                    <a href="{{ url_for('post_detail', post_id=post.id) }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-book-open"></i> Read more
+                    </a>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
 
-    <!-- Пагинация -->
-    <nav>
+    <nav aria-label="Page navigation">
         <ul class="pagination justify-content-center">
             {% if posts.has_prev %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('index', page=posts.prev_num) }}">Previous</a>
+                <a class="page-link" href="{{ url_for('index', page=posts.prev_num) }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo; Previous</span>
+                </a>
             </li>
             {% endif %}
             {% for page_num in range(1, posts.pages + 1) %}
@@ -52,16 +50,25 @@
             {% endfor %}
             {% if posts.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('index', page=posts.next_num) }}">Next</a>
+                <a class="page-link" href="{{ url_for('index', page=posts.next_num) }}" aria-label="Next">
+                    <span aria-hidden="true">Next &raquo;</span>
+                </a>
             </li>
             {% endif %}
         </ul>
     </nav>
+    {% else %}
+    <div class="text-center mt-5 mb-5">
+        <h4>😔 Sorry, there's nothing here yet.</h4>
+    </div>
+    {% endif %}
 </div>
-{% endif %}
+
 <!-- Закрепленная кнопка "Создать пост" -->
-<div class="fixed-bottom mb-4 mr-4" style="text-align: right;">
-    <a href="{{ url_for('create_post') }}" class="btn btn-success btn-lg" role="button" aria-pressed="true">Create
-        Post</a>
+<div class="fixed-bottom mb-4 mr-4 text-right">
+    <a href="{{ url_for('create_post') }}" class="btn btn-success btn-lg shadow-lg">
+        <i class="fas fa-plus"></i> Create Post
+    </a>
 </div>
+
 {% endblock %}

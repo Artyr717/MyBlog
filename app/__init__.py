@@ -1,3 +1,4 @@
+import pytz
 from flask import Flask
 from flask_login import LoginManager
 from flask_migrate import Migrate
@@ -12,6 +13,7 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 login = LoginManager(app)
 login.login_view = 'login'
+moscow_tz = pytz.timezone('Europe/Moscow')
 
 
 @app.template_filter('nl2br')

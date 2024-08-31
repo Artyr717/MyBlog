@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mb-4 shadow-sm">
+                {% if post.image %}
+                <img src="{{ post.image }}" class="card-img-top rounded" alt="{{ post.title }}">
+                {% endif %}
+
+                <div class="card-body">
+                    <h1 class="card-title mb-3">{{ post.title }}</h1>
+                    <p class="card-text mb-4">
+                        <small class="text-muted">
+                            Posted on {{ post.formatted_timestamp() }} by
+                            <a href="{{ url_for('user', username=post.author.username) }}" class="text-decoration-none">
+                            {{ post.author.username }}
+                            </a>
+                        </small>
+                    </p>
+
+                    <!-- Horizontal line before the main content -->
+                    <hr class="my-4">
+
+                    <div>
+                        <p class="card-text">{{ post.body | safe }}</p>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light text-center">
+                    <!-- Button to return to the previous page -->
+                    <a href="javascript:history.back()" class="btn btn-primary">
+                        Вернуться назад
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

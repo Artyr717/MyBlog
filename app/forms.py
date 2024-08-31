@@ -56,6 +56,20 @@ class EditProfileForm(FlaskForm):
 
 class CreatePostForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired()])
+    preview = StringField("Preview", validators=[DataRequired(), Length(min=10, max=100)])
     body = TextAreaField("Main Text", validators=[DataRequired(), Length(min=10)])
-    write_comments = BooleanField("Comments")
     submit = SubmitField('Create')
+
+
+class EditPostForm(FlaskForm):
+    title = StringField("Title", validators=[DataRequired()])
+    preview = StringField("Preview", validators=[DataRequired(), Length(min=10, max=100)])
+    body = TextAreaField("Main Text", validators=[DataRequired(), Length(min=10)])
+    submit = SubmitField('Submit')
+
+    class EditPostForm(FlaskForm):
+        def __init__(self, original_title, original_preview, original_body, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.title.data = original_title
+            self.preview.data = original_preview
+            self.body.data = original_body

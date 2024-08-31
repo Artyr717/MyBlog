@@ -1,12 +1,12 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from urllib.parse import urlsplit
 
 import sqlalchemy as sa
 from flask import render_template, url_for, redirect, flash, request
 from flask_login import current_user, login_user, logout_user, login_required
 
-from app import app, db
-from app.forms import LoginForm, RegistrationForm, EditProfileForm, CreatePostForm
+from app import app, db, moscow_tz
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, CreatePostForm, EditPostForm
 from .models import User, Post
 
 
@@ -57,7 +57,7 @@ def user(username):
 @app.before_request
 def before_request():
     if current_user.is_authenticated:
-        current_user.last_seen = datetime.now(timezone.utc)
+        current_user.last_seen = datetime.now(moscow_tz)
         db.session.commit()
 
 
@@ -95,23 +95,73 @@ def edit_profile():
 @app.route("/create_post", methods=['GET', 'POST'])
 @login_required
 def create_post():
-    if current_user.is_admin:
-        form = CreatePostForm()
-        if form.validate_on_submit():
-            post = Post(title=form.title.data, body=form.body.data, write_comments=form.write_comments.data,
-                        author=current_user)
-            db.session.add(post)
-            db.session.commit()
-            flash('Congratulations, new post created!', "success")
-            return redirect(url_for('index'))
-        else:
-            print(form.errors)  # Вывод ошибок валидации формы
-        return render_template("create_post.html", form=form)
-
-    return render_template("404.html")
+    form = CreatePostForm()
+    if form.validate_on_submit():
+        post = Post(title=form.title.data, body=form.body.data, write_comments=form.write_comments.data,
+                    preview=form.preview.data,
+                    author=current_user)
+        db.session.add(post)
+        db.session.commit()
+        flash('Congratulations, new post created!', "success")
+        return redirect(url_for('index'))
+    else:
+        print(form.errors)  # Вывод ошибок валидации формы
+    return render_template("create_post.html", form=form)
 
 
 @app.route("/post_detail/<post_id>")
 @login_required
 def post_detail(post_id):
-    pass
+    post = Post.query.filter_by(id=post_id).first_or_404()
+    return render_template("post_details.html", post=post)
+
+
+@app.route('/edit_post/<int:post_id>', methods=['GET', 'POST'])
+@login_required
+def edit_post(post_id):
+    post = Post.query.get_or_404(post_id)
+
+    if post.author != current_user:
+        flash('You are not authorized to edit this post.', 'danger')
+        return redirect(url_for('index'))
+
+    form = EditPostForm(
+        original_title=post.title,
+        original_preview=post.preview,  # Убедитесь, что это поле существует в форме
+        original_body=post.body
+    )
+
+    if form.validate_on_submit():
+        post.title = form.title.data
+        post.preview = form.preview.data  # Добавьте это поле в модель Post и форму
+        post.body = form.body.data
+        db.session.commit()
+        flash('Your post has been updated.', 'success')
+        return redirect(url_for('post_detail', post_id=post.id))
+
+    if request.method == 'GET':
+        form.title.data = post.title
+        form.preview.data = post.preview  # Добавьте это поле в форму
+        form.body.data = post.body
+
+    return render_template('edit_post.html', title='Edit Post', form=form, post=post)
+
+
+@app.route("/delete_post/<int:post_id>", methods=['POST'])
+@login_required
+def delete_post(post_id):
+    post = Post.query.get_or_404(post_id)
+
+    if post.author != current_user:
+        flash('You are not authorized to delete this post.', 'danger')
+        return redirect(url_for('index'))
+
+    try:
+        db.session.delete(post)
+        db.session.commit()
+        flash('Post has been deleted.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting post: {str(e)}', 'danger')
+
+    return redirect(url_for('user', username=current_user.username))
