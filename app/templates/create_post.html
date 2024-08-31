@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %} Create Post {% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <h2 class="text-center">Create a New Post</h2>
+        <form method="POST" action="{{ url_for('create_post') }}">
+            {{ form.hidden_tag() }}
+
+            <!-- Title Field -->
+            <div class="form-group">
+                {{ form.title.label(class="form-label") }}
+                {{ form.title(class="form-control") }}
+            </div>
+
+            <!-- Body Field -->
+            <div class="form-group">
+                {{ form.body.label(class="form-label") }}
+                <!-- Textarea for TinyMCE -->
+                <textarea id="post_body" name="body" class="form-control">{{ form.body.data if form.body.data else ''|safe }}</textarea>
+            </div>
+
+            <div class="form-group form-check">
+                {{ form.write_comments(class="form-check-input") }}
+                {{ form.write_comments.label(class="form-check-label") }}
+            </div>
+
+            <!-- Submit Button -->
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary w-100") }}
+            </div>
+        </form>
+
+        <!-- Back to Posts Link -->
+        <div class="text-center mt-3">
+            <p><a href="{{ url_for('index') }}">Back to Posts</a></p>
+        </div>
+    </div>
+</div>
+
+<!-- TinyMCE Integration -->
+<script src="https://cdn.tiny.cloud/1/247pvwinddayvgmaihbhjl5koq6ij8mbjbsesn6fqib18yoc/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        tinymce.init({
+            selector: '#post_body',
+            plugins: 'advlist autolink lists link image charmap preview anchor',
+            toolbar: 'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat',
+            menubar: false,
+            setup: function(editor) {
+                editor.on('init', function() {
+                    // Set initial content if provided
+                    var initialContent = document.getElementById('post_body').value;
+                    editor.setContent(initialContent);
+                });
+            }
+        });
+
+        // Save TinyMCE content to textarea before form submission
+        document.querySelector('form').addEventListener('submit', function() {
+            tinymce.get('post_body').save();
+        });
+    });
+</script>
+{% endblock %}

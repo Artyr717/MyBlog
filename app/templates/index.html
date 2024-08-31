@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+{% if posts.items %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Posts</h1>
+    <div class="row">
+        {% for post in posts.items %}
+        <div class="col-md-12 mb-4">
+            <div class="card" style="max-width: 600px; margin: 0 auto;">
+                <!-- Постер поста -->
+                {% if post.image %}
+                <img src="{{ post.image }}" class="card-img-top" alt="{{ post.title }}">
+                {% endif %}
+
+                <!-- Заголовок и дата -->
+                <div class="card-header bg-light border-bottom">
+                    <div class="d-flex flex-column align-items-center">
+                        <h5 class="card-title text-center mb-1">{{ post.title }}</h5>
+                        <small class="text-muted">{{ post.formatted_timestamp() }}</small>
+                    </div>
+                </div>
+
+                <!-- Содержимое карточки -->
+                <div class="card-body">
+                    <p class="card-text">{{ post.body | truncate(100, True, '...') | safe }}</p>
+                </div>
+
+                <!-- Кнопка "Читать далее" справа -->
+                <div class="card-footer d-flex justify-content-end">
+                    <a href="{{ url_for('post_detail', post_id=post.id) }}" class="btn btn-primary">Read more</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Пагинация -->
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if posts.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('index', page=posts.prev_num) }}">Previous</a>
+            </li>
+            {% endif %}
+            {% for page_num in range(1, posts.pages + 1) %}
+            <li class="page-item {% if page_num == posts.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a>
+            </li>
+            {% endfor %}
+            {% if posts.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('index', page=posts.next_num) }}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+<!-- Закрепленная кнопка "Создать пост" -->
+<div class="fixed-bottom mb-4 mr-4" style="text-align: right;">
+    <a href="{{ url_for('create_post') }}" class="btn btn-success btn-lg" role="button" aria-pressed="true">Create
+        Post</a>
+</div>
+{% endblock %}
