@@ -13,17 +13,36 @@
                 {% if post.image %}
                 <img src="{{ post.image }}" class="card-img-top rounded-top-4" alt="{{ post.title }}">
                 {% endif %}
+                <div class="card-header text-center bg-white shadow-sm">
+                    <h5 style="margin: 5px 0"><b>{{ post.title }}</b></h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">{{ post.title }}</h5>
                     <p class="card-text">{{ post.preview }}</p>
                 </div>
                 <div class="card-footer bg-light text-muted d-flex justify-content-between align-items-center rounded-bottom-4">
-                    <small class="text-muted">
-                        <i class="fas fa-calendar-alt"></i> {{ post.formatted_timestamp() }} |
-                        <i class="fas fa-user"></i>
-                        <a href="{{ url_for('user', username=post.author.username) }}" class="text-decoration-none">
-                            {{ post.author.username }}
-                        </a>
+                    <small class="text-muted d-flex align-items-center">
+                        <!-- Display User Avatar -->
+                        {% if post.author.avatar %}
+                        <img src="{{ url_for('static', filename='uploads/' + post.author.avatar) }}"
+                             alt="{{ post.author.username }}'s Avatar"
+                             class="rounded-circle"
+                             style="width: 30px; height: 30px; margin-right: 10px;">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='default-avatar.png') }}"
+                             alt="Default Avatar"
+                             class="rounded-circle"
+                             style="width: 30px; height: 30px; margin-right: 10px;">
+                        {% endif %}
+
+                        <b class="me-2">{{ post.formatted_timestamp() }}</b>
+                        <!-- Add space manually -->
+                        <span style="margin: 0 10px;">|</span>
+                        <b>
+                            <a href="{{ url_for('user', username=post.author.username) }}" class="text-decoration-none">
+                                {{ post.author.username }}
+                            </a>
+                        </b>
+
                     </small>
                     <a href="{{ url_for('post_detail', post_id=post.id) }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-book-open"></i> Read more
@@ -64,7 +83,7 @@
     {% endif %}
 </div>
 
-<!-- Закрепленная кнопка "Создать пост" -->
+<!-- Fixed "Create Post" Button -->
 <div class="fixed-bottom mb-4 mr-4 text-right">
     <a href="{{ url_for('create_post') }}" class="btn btn-success btn-lg shadow-lg">
         <i class="fas fa-plus"></i> Create Post
