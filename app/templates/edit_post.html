@@ -32,8 +32,14 @@
                         tinymce.init({
                             selector: '#body',
                             plugins: 'advlist autolink lists link image charmap preview anchor textcolor',
-                            toolbar: 'undo redo bullist numlist',
-                            menubar: 'insert format'
+                            toolbar: 'undo redo | bullist numlist | hr',
+                            menubar: 'insert format',
+                            mobile: {
+                                theme: 'silver',
+                                plugins: 'advlist autolink lists link image charmap preview anchor textcolor',
+                                toolbar: 'undo redo | bullist numlist | hr',
+                                menubar: 'insert format'
+                            }
                         });
                     </script>
                 </div>

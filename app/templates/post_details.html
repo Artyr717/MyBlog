@@ -10,31 +10,39 @@
                 {% if post.image %}
                 <img src="{{ post.image }}" class="card-img-top rounded" alt="{{ post.title }}">
                 {% endif %}
-
-                <div class="card-body">
-                    <h1 class="card-title mb-3">{{ post.title }}</h1>
-                    <p class="card-text mb-4">
+                <div class="card-header bg-white shadow-sm">
+                    <h1 class="card-title text-center my-3">{{ post.title }}</h1>
+                    <p class="card-text mb-2">
                         <small class="text-muted">
                             Posted on {{ post.formatted_timestamp() }} by
-                            <a href="{{ url_for('user', username=post.author.username) }}" class="text-decoration-none">
-                            {{ post.author.username }}
+                            <a href="{{ url_for('user', username=post.author.username) }}"
+                               class="text-decoration-none">
+                                {{ post.author.username }}
                             </a>
                         </small>
                     </p>
-
-                    <!-- Horizontal line before the main content -->
-                    <hr class="my-4">
-
-                    <div>
-                        <p class="card-text">{{ post.body | safe }}</p>
-                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ post.body | safe }}</p>
                 </div>
 
                 <div class="card-footer bg-light text-center">
                     <!-- Button to return to the previous page -->
-                    <a href="javascript:history.back()" class="btn btn-primary">
-                        Вернуться назад
+                    <a href="/" class="btn btn-secondary rounded">
+                        <i class="fas fa-arrow-left"></i> Back
                     </a>
+
+                    <!-- Like/Unlike Button with number of likes -->
+                    <form action="{{ url_for('like', post_id=post.id) }}" method="POST" class="d-inline">
+                        <button type="submit" class="btn
+                            {% if current_user.is_liking(post) %}
+                            btn-danger
+                            {% else %}
+                            btn-outline-danger
+                            {% endif %}">
+                            <i class="fas fa-heart"></i> {{ post.like_count() }}
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

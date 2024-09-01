@@ -5,146 +5,180 @@
 {% block content %}
 <div class="container mt-5">
     <div class="row">
-        <!-- User Avatar and Basic Info Card -->
+        <!-- Left Column: User Profile -->
         <div class="col-md-4 mb-4">
+            <!-- User Profile Card -->
             <div class="card">
-                <img src="{{ user.avatar(256) }}" alt="User Avatar" class="card-img-top rounded-circle mx-auto my-3"
+                <div class="card-header text-center bg-light">
+                    <h4 style="margin: 0" class="card-title">User</h4>
+                </div>
+                <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" alt="User Avatar"
+                     class="card-img-top rounded-circle mx-auto my-3"
                      style="width: 150px; height: 150px;">
-
                 <div class="card-body text-center">
                     <h3 class="card-title">{{ user.username }}</h3>
                     {% if user.is_admin %}
-                    <span class="badge bg-danger">Admin</span>
+                    <span class="badge bg-danger text-white">Admin</span>
                     {% endif %}
                     {% if user.last_seen %}
-                    <p class="text-muted">Last online: {{ user.formatted_last_seen() }}</p>
+                    {% if user.is_online %}
+                    <span class="badge bg-success text-white">Online</span>
+                    {% else %}
+                    <span class="badge bg-secondary text-white">Offline</span>
+                    <div class="mt-2">
+                        <div class="text-muted">Last online:</div>
+                        <div class="bg-light text-dark p-2 rounded">{{ user.formatted_last_seen() }}</div>
+                    </div>
+                    {% endif %}
+
                     {% endif %}
                 </div>
+                {% if user == current_user %}
+                <div class="card-footer bg-light">
+                    <!-- Edit Profile Button -->
+                    <a href="{{ url_for('edit_profile') }}" class="btn btn-outline-primary btn-block mb-2">
+                        Edit Profile
+                    </a>
+                    <!-- Create Post Button -->
+                    <a href="{{ url_for('create_post') }}" class="btn btn-success btn-block">
+                        Create Post
+                    </a>
+                </div>
+                {% endif %}
             </div>
         </div>
 
-        <!-- User Description and Edit Profile Button -->
+        <!-- Right Column: About Me -->
         <div class="col-md-8 mb-4">
             <div class="card">
+                <div class="card-header text-center bg-light">
+                    <h4 style="margin: 0" class="card-title">About Me</h4>
+                </div>
                 <div class="card-body">
-                    <!-- User Description -->
                     {% if user.about_me %}
                     <p class="card-text">{{ user.about_me | safe }}</p>
-                    {% endif %}
-
-                    <!-- Edit Profile Button -->
+                    {% else %}
                     {% if user == current_user %}
-                    <div class="text-center mt-3">
-                        <a href="{{ url_for('edit_profile') }}" class="btn btn-primary" style="margin-right: 10px;">
-                            Edit Your Profile
-                        </a>
-                    </div>
+                    <p class="card-text text-center">You haven't written anything about yourself yet! 😒</p>
+                    {% else %}
+                    <p class="card-text text-center"><b>{{ user.username }}</b> hasn't written anything about themselves
+                        yet! 😒</p>
+                    {% endif %}
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- User Posts Section -->
-    <div class="mt-5">
-        <h4 class="text-center mb-4">Posts by {{ user.username }}</h4>
+    <!-- User Posts Section (Full Width) -->
+    <div class="row mt-5">
+        <div class="col-md-12 mb-5"> <!-- Добавляем отступ снизу -->
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="text-center mb-4">Posts by {{ user.username }}</h4>
 
-        {% if posts.total == 0 %}
-        <!-- Сообщение при отсутствии постов -->
-        <div class="d-flex justify-content-center align-items-center" style="height: 300px;">
-            <h4>😔 Sorry, there's nothing here yet.</h4>
-        </div>
-        {% else %}
-        <div class="row">
-            {% for post in posts.items %}
-            <div class="col-md-6 mb-4">
-                <div class="card h-100">
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0" style="word-wrap: break-word;">
-                                {{ post.title }}
-                            </h5>
-                            <small class="text-muted">{{ post.formatted_timestamp() }}</small>
+                    {% if posts.total == 0 %}
+                    <!-- Message when there are no posts -->
+                    <div class="d-flex justify-content-center align-items-center" style="height: 300px;">
+                        <h4>😔 Sorry, there's nothing here yet.</h4>
+                    </div>
+                    {% else %}
+                    <div class="row">
+                        {% for post in posts.items %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header text-center bg-white shadow-sm">
+                                    <h5 style="margin: 5px 0"><b>{{ post.title }}</b></h5>
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <small class="text-muted">{{ post.formatted_timestamp() }}</small>
+                                    </div>
+                                    <!-- Limited text height with scroll -->
+                                    <p class="card-text"
+                                       style="max-height: 100px; overflow-y: auto; word-wrap: break-word;">
+                                        {{ post.preview }}
+                                    </p>
+                                </div>
+
+                                <div class="card-footer d-flex justify-content-between align-items-center">
+                                    <a href="{{ url_for('post_detail', post_id=post.id) }}" class="btn btn-primary">
+                                        Read more
+                                    </a>
+
+                                    {% if user == current_user %}
+                                    <div class="d-flex">
+                                        <!-- Edit Button -->
+                                        <a href="{{ url_for('edit_post', post_id=post.id) }}"
+                                           class="btn btn-outline-success mr-2">
+                                            Edit
+                                        </a>
+
+                                        <!-- Delete Button Form -->
+                                        <form action="{{ url_for('delete_post', post_id=post.id) }}" method="POST"
+                                              class="d-inline">
+                                            <button type="submit" class="btn btn-outline-danger "
+                                                    onclick="return confirm('Are you sure you want to delete this post?');">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
-                        <!-- Ограничиваем высоту текста и добавляем прокрутку -->
-                        <p class="card-text" style="max-height: 100px; overflow-y: auto; word-wrap: break-word;">
-                            {{ post.preview }}
-                        </p>
+                        {% endfor %}
                     </div>
 
-                    <div class="card-footer d-flex justify-content-between align-items-center">
-                        <a href="{{ url_for('post_detail', post_id=post.id) }}" class="btn btn-primary" style="margin-right: 10px;">
-                            Read more
-                        </a>
+                    <!-- Pagination Controls -->
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center mt-4">
+                            {% if posts.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                   href="{{ url_for('user', username=user.username, page=posts.prev_num) }}"
+                                   aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">&laquo;</span>
+                            </li>
+                            {% endif %}
 
-                        {% if user == current_user %}
-                        <div class="d-flex">
-                            <!-- Edit Button -->
-                            <a href="{{ url_for('edit_post', post_id=post.id) }}" class="btn btn-warning" style="margin-right: 10px;">
-                                Edit
-                            </a>
+                            {% for p in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+                            {% if p %}
+                            <li class="page-item {% if p == posts.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('user', username=user.username, page=p) }}">{{ p
+                                    }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
 
-                            <!-- Delete Button Form -->
-                            <form action="{{ url_for('delete_post', post_id=post.id) }}" method="POST" class="d-inline">
-                                <button type="submit" class="btn btn-danger"
-                                        style="background-color: #dc3545; border-color: #dc3545;"
-                                        onmouseover="this.style.backgroundColor='#c82333'; this.style.borderColor='#bd2130';"
-                                        onmouseout="this.style.backgroundColor='#dc3545'; this.style.borderColor='#dc3545';"
-                                        onclick="return confirm('Are you sure you want to delete this post?');">
-                                    Delete
-                                </button>
-                            </form>
-                        </div>
-                        {% endif %}
-                    </div>
+                            {% if posts.has_next %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                   href="{{ url_for('user', username=user.username, page=posts.next_num) }}"
+                                   aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">&raquo;</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
                 </div>
             </div>
-            {% endfor %}
         </div>
-
-        <!-- Pagination Controls -->
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center mt-4">
-                {% if posts.has_prev %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('user', username=user.username, page=posts.prev_num) }}"
-                       aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
-                </li>
-                {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link" aria-hidden="true">&laquo;</span>
-                </li>
-                {% endif %}
-
-                {% for p in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
-                {% if p %}
-                <li class="page-item {% if p == posts.page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('user', username=user.username, page=p) }}">{{ p }}</a>
-                </li>
-                {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">...</span>
-                </li>
-                {% endif %}
-                {% endfor %}
-
-                {% if posts.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('user', username=user.username, page=posts.next_num) }}"
-                       aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>
-                {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link" aria-hidden="true">&raquo;</span>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

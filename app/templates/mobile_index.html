@@ -5,22 +5,20 @@
 {% block content %}
 <div class="container mt-5">
     {% if posts.items %}
-    <h1 class="text-center mb-4">Posts</h1>
-    <div class="row justify-content-center">
+    <h1 class="text-center mb-4">Latest Posts</h1>
+    <div class="row">
         {% for post in posts.items %}
-        <div class="col-md-8 mb-4">
-            <div class="card shadow-lg border-light rounded-4" style="transition: transform 0.3s, box-shadow 0.3s;">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+            <div class="card border-light shadow-sm rounded-3">
                 {% if post.image %}
-                <img src="{{ post.image }}" class="card-img-top rounded-top-4" alt="{{ post.title }}">
+                <img src="{{ post.image }}" class="card-img-top rounded-top-3" alt="{{ post.title }}">
                 {% endif %}
-                <div class="card-header text-center bg-white shadow-sm">
-                    <h5 style="margin: 5px 0"><b>{{ post.title }}</b></h5>
-                </div>
                 <div class="card-body">
+                    <h5 class="card-title">{{ post.title }}</h5>
                     <p class="card-text">{{ post.preview }}</p>
                 </div>
-                <div class="card-footer bg-light text-muted d-flex justify-content-between align-items-center rounded-bottom-4">
-                    <small class="text-muted d-flex align-items-center">
+                <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-center bg-light rounded-bottom-3">
+                    <div class="d-flex align-items-center mb-2 mb-md-0">
                         <!-- Display User Avatar -->
                         {% if post.author.avatar %}
                         <img src="{{ url_for('static', filename='uploads/' + post.author.avatar) }}"
@@ -33,18 +31,17 @@
                              class="rounded-circle"
                              style="width: 30px; height: 30px; margin-right: 10px;">
                         {% endif %}
-
-                        <b class="me-2">{{ post.formatted_timestamp() }}</b>
-                        <!-- Add space manually -->
-                        <span style="margin: 0 10px;">|</span>
-                        <b>
+                        <span class="me-2">{{ post.formatted_timestamp() }}</span>
+                        <!-- Custom separator -->
+                        <span class="text-muted mx-2"
+                              style="border-left: 1px solid #dee2e6; height: 20px; align-self: center;"></span>
+                        <span>
                             <a href="{{ url_for('user', username=post.author.username) }}" class="text-decoration-none">
                                 {{ post.author.username }}
                             </a>
-                        </b>
-
-                    </small>
-                    <a href="{{ url_for('post_detail', post_id=post.id) }}" class="btn btn-primary btn-sm">
+                        </span>
+                    </div>
+                    <a href="{{ url_for('post_detail', post_id=post.id) }}" class="btn btn-primary btn-sm mt-2 mt-md-0">
                         <i class="fas fa-book-open"></i> Read more
                     </a>
                 </div>
@@ -54,7 +51,7 @@
     </div>
 
     <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center">
+        <ul class="pagination justify-content-center mt-4">
             {% if posts.has_prev %}
             <li class="page-item">
                 <a class="page-link" href="{{ url_for('index', page=posts.prev_num) }}" aria-label="Previous">
@@ -84,9 +81,16 @@
 </div>
 
 <!-- Fixed "Create Post" Button -->
-<div class="fixed-bottom mb-4 mr-4 text-right">
+<div class="position-fixed bottom-0 end-0 mb-4 me-4 d-none d-md-block">
     <a href="{{ url_for('create_post') }}" class="btn btn-success btn-lg shadow-lg">
         <i class="fas fa-plus"></i> Create Post
+    </a>
+</div>
+
+<!-- Mobile Button -->
+<div class="fixed-bottom d-md-none text-center mb-3">
+    <a href="{{ url_for('create_post') }}" class="btn btn-success btn-lg shadow-lg rounded-circle">
+        <i class="fas fa-plus"></i>
     </a>
 </div>
 

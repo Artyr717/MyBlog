@@ -1,23 +1,30 @@
+import os
 from datetime import datetime
 from urllib.parse import urlsplit
 
 import sqlalchemy as sa
 from flask import render_template, url_for, redirect, flash, request
 from flask_login import current_user, login_user, logout_user, login_required
+from user_agents import parse
+from werkzeug.utils import secure_filename
 
 from app import app, db, moscow_tz
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, CreatePostForm, EditPostForm
-from .models import User, Post
+from .models import User, Post, Like
 
 
 @app.route("/")
 @app.route("/index")
 def index():
+    user_agent = parse(request.headers.get('User-Agent'))
+    if user_agent.is_mobile:
+        template = 'mobile_index.html'
+    else:
+        template = 'desktop_index.html'
     page = request.args.get("page", 1, type=int)
     per_page = 5
     posts = Post.query.order_by(Post.timestamp.desc()).paginate(page=page, per_page=per_page, error_out=False)
-
-    return render_template("index.html", posts=posts)
+    return render_template(template, posts=posts)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -26,8 +33,7 @@ def login():
         return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
-        user = db.session.scalar(
-            sa.select(User).where(User.username == form.username.data))
+        user = db.session.scalar(sa.select(User).where(User.username == form.username.data))
         if user is None or not user.check_password(form.password.data):
             flash('Invalid username or password', "danger")
             return redirect(url_for('login'))
@@ -83,13 +89,30 @@ def edit_profile():
     if form.validate_on_submit():
         current_user.username = form.username.data
         current_user.about_me = form.about_me.data
+
+        if 'avatar' in request.files:
+            file = request.files['avatar']
+            if file and file.filename != '':
+                filename = secure_filename(file.filename)
+                upload_folder = os.path.join(app.static_folder, 'uploads')
+
+                if not os.path.exists(upload_folder):
+                    os.makedirs(upload_folder)
+
+                file_path = os.path.join(upload_folder, filename)
+                file.save(file_path)
+
+                current_user.avatar = filename
+
         db.session.commit()
         flash('Your changes have been saved.', 'success')
         return redirect(url_for('user', username=current_user.username))
+
     elif request.method == 'GET':
         form.username.data = current_user.username
         form.about_me.data = current_user.about_me
-    return render_template('edit_profile.html', title='Edit Profile', form=form)
+
+    return render_template('edit_profile.html', title='Edit Profile', form=form, user=current_user)
 
 
 @app.route("/create_post", methods=['GET', 'POST'])
@@ -97,15 +120,19 @@ def edit_profile():
 def create_post():
     form = CreatePostForm()
     if form.validate_on_submit():
-        post = Post(title=form.title.data, body=form.body.data, write_comments=form.write_comments.data,
-                    preview=form.preview.data,
-                    author=current_user)
-        db.session.add(post)
-        db.session.commit()
-        flash('Congratulations, new post created!', "success")
-        return redirect(url_for('index'))
+        print(f"current_user: {current_user}, current_user.id: {current_user.id}")
+        # Проверяем, что current_user существует и корректно загружен
+        if current_user.is_authenticated:
+            post = Post(title=form.title.data, body=form.body.data, preview=form.preview.data, author=current_user)
+            db.session.add(post)
+            db.session.commit()
+            flash('Поздравляем, новый пост создан!', "success")
+            return redirect(url_for('index'))
+        else:
+            flash('Ошибка: пользователь не аутентифицирован', 'danger')
+            return redirect(url_for('login'))
     else:
-        print(form.errors)  # Вывод ошибок валидации формы
+        print(form.errors)  # Вывод ошибок для отладки
     return render_template("create_post.html", form=form)
 
 
@@ -113,6 +140,7 @@ def create_post():
 @login_required
 def post_detail(post_id):
     post = Post.query.filter_by(id=post_id).first_or_404()
+    print(f"Post.likes: {post.likes}")
     return render_template("post_details.html", post=post)
 
 
@@ -127,13 +155,13 @@ def edit_post(post_id):
 
     form = EditPostForm(
         original_title=post.title,
-        original_preview=post.preview,  # Убедитесь, что это поле существует в форме
+        original_preview=post.preview,
         original_body=post.body
     )
 
     if form.validate_on_submit():
         post.title = form.title.data
-        post.preview = form.preview.data  # Добавьте это поле в модель Post и форму
+        post.preview = form.preview.data
         post.body = form.body.data
         db.session.commit()
         flash('Your post has been updated.', 'success')
@@ -141,7 +169,7 @@ def edit_post(post_id):
 
     if request.method == 'GET':
         form.title.data = post.title
-        form.preview.data = post.preview  # Добавьте это поле в форму
+        form.preview.data = post.preview
         form.body.data = post.body
 
     return render_template('edit_post.html', title='Edit Post', form=form, post=post)
@@ -165,3 +193,22 @@ def delete_post(post_id):
         flash(f'Error deleting post: {str(e)}', 'danger')
 
     return redirect(url_for('user', username=current_user.username))
+
+
+@app.route('/like/<int:post_id>', methods=['POST'])
+@login_required
+def like(post_id):
+    post = Post.query.get_or_404(post_id)
+    if current_user.is_liking(post):
+        # Если пользователь уже лайкнул пост, убираем лайк
+        like = db.session.scalar(sa.select(Like).where(Like.post_id == post_id, Like.user_id == current_user.id))
+        db.session.delete(like)
+        flash('Removed your like.', 'success')
+    else:
+        # Если пользователь не лайкал пост, добавляем лайк
+        like = Like(post_id=post_id, user_id=current_user.id)
+        db.session.add(like)
+        flash('You liked the post.', 'success')
+
+    db.session.commit()
+    return redirect(url_for('post_detail', post_id=post_id))
