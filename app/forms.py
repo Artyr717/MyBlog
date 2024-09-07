@@ -3,25 +3,30 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.fields.simple import TextAreaField
-from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length
+from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length, Regexp
 
 from app import db
 from app.models import User
 
 
 class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
+    username = StringField('Username', validators=[DataRequired(), Regexp(r'^[a-zA-Z0-9_]+$',
+                                                                          message="Username must contain only Latin letters, numbers, and underscores.")])
+    password = PasswordField('Password', validators=[DataRequired(), Regexp(r'^[a-zA-Z0-9_]+$',
+                                                                            message="Password must contain only Latin letters, numbers, and underscores.")])
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Sign In')
 
 
 class RegistrationForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
+    username = StringField('Username', validators=[DataRequired(), Regexp(r'^[a-zA-Z0-9_]+$',
+                                                                          message="Username must contain only Latin letters, numbers, and underscores.")])
     email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Password', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired(), Regexp(r'^[a-zA-Z0-9_]+$',
+                                                                            message="Password must contain only Latin letters, numbers, and underscores.")])
     password2 = PasswordField(
-        'Repeat Password', validators=[DataRequired(), EqualTo('password')])
+        'Repeat Password', validators=[DataRequired(), EqualTo('password'), Regexp(r'^[a-zA-Z0-9_]+$',
+                                                                                   message="Password must contain only Latin letters, numbers, and underscores.")])
     submit = SubmitField('Register')
 
     def validate_username(self, username):
@@ -38,7 +43,8 @@ class RegistrationForm(FlaskForm):
 
 
 class EditProfileForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
+    username = StringField('Username', validators=[DataRequired(), Regexp(r'^[a-zA-Z0-9_]+$',
+                                                                          message="Username must contain only Latin letters, numbers, and underscores.")])
     about_me = TextAreaField('About Me', validators=[Length(min=0)])
     avatar = FileField('Upload New Avatar (optional)')
     submit = SubmitField('Submit')

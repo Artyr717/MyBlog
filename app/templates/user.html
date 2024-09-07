@@ -30,7 +30,6 @@
                         <div class="bg-light text-dark p-2 rounded">{{ user.formatted_last_seen() }}</div>
                     </div>
                     {% endif %}
-
                     {% endif %}
                 </div>
                 {% if user == current_user %}
@@ -45,6 +44,18 @@
                     </a>
                 </div>
                 {% endif %}
+            </div>
+
+            <!-- Statistics Card -->
+            <div class="card mt-4">
+                <div class="card-header text-center bg-light">
+                    <h4 style="margin: 0" class="card-title">Statistics</h4>
+                </div>
+                <div class="card-body text-center">
+                    <p><b>Posts:</b> {{ user.posts_count() }}</p>
+                    <p><b>Total Likes:</b> {{ user.total_likes() }}</p>
+                    <p><b>Joined us:</b> {{ user.formatted_reg_date() }}</p>
+                </div>
             </div>
         </div>
 
@@ -72,7 +83,7 @@
 
     <!-- User Posts Section (Full Width) -->
     <div class="row mt-5">
-        <div class="col-md-12 mb-5"> <!-- Добавляем отступ снизу -->
+        <div class="col-md-12 mb-5">
             <div class="card">
                 <div class="card-body">
                     <h4 class="text-center mb-4">Posts by {{ user.username }}</h4>
@@ -93,6 +104,15 @@
                                 <div class="card-body d-flex flex-column">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <small class="text-muted">{{ post.formatted_timestamp() }}</small>
+                                        {% if user == current_user %}
+                                        <!-- Edit Button -->
+                                        <small>
+                                            <a href="{{ url_for('edit_post', post_id=post.id) }}"
+                                               class="btn btn-outline-success mr-2">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </a>
+                                        </small>
+                                        {% endif %}
                                     </div>
                                     <!-- Limited text height with scroll -->
                                     <p class="card-text"
@@ -106,18 +126,13 @@
                                         Read more
                                     </a>
 
-                                    {% if user == current_user %}
-                                    <div class="d-flex">
-                                        <!-- Edit Button -->
-                                        <a href="{{ url_for('edit_post', post_id=post.id) }}"
-                                           class="btn btn-outline-success mr-2">
-                                            Edit
-                                        </a>
 
-                                        <!-- Delete Button Form -->
+                                    <!-- Delete Button Form (Visible to both post owner and admin) -->
+                                    {% if current_user.is_admin or user == current_user %}
+                                    <div class="d-flex">
                                         <form action="{{ url_for('delete_post', post_id=post.id) }}" method="POST"
                                               class="d-inline">
-                                            <button type="submit" class="btn btn-outline-danger "
+                                            <button type="submit" class="btn btn-outline-danger"
                                                     onclick="return confirm('Are you sure you want to delete this post?');">
                                                 Delete
                                             </button>

@@ -22,8 +22,8 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
 <!-- Header -->
-<header class="bg-primary text-white fixed-top">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<header class="bg-dark text-white fixed-top text-size">
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: black; font-size: 20px;">
         <a class="navbar-brand" href="/">My Blog</a>
         <button
                 class="navbar-toggler"
@@ -51,18 +51,18 @@
             <div class="form-inline">
                 {% if current_user.is_anonymous %}
                 <a
-                        class="btn btn-outline-primary my-2 my-sm-0"
+                        class="btn btn-outline-success my-2 my-sm-0" style="border-width: 2px; border-radius: 10px;"
                         href="{{ url_for('login') }}"
                 >Login</a>
                 <a
-                        class="btn btn-light my-2 my-sm-0 ml-2"
+                        class="btn btn-warning my-2 my-sm-0 ml-2" style="border-width: 2px; border-radius: 10px;"
                         href="{{ url_for('register') }}"
                 >Sign Up</a>
                 {% else %}
-                <a class="btn btn-primary my-2 my-sm-0 mr-2"
+                <a class="btn btn-outline-success my-2 my-sm-0 mr-2" style="border-width: 2px; border-radius: 10px;"
                    href="{{ url_for('user', username=current_user.username) }}">Profile</a>
                 <a
-                        class="btn btn-outline-warning my-2 my-sm-0"
+                        class="btn btn-outline-warning my-2 my-sm-0" style="border-width: 2px; border-radius: 10px;"
                         href="{{ url_for('logout') }}"
                         onmouseover="this.classList.add('btn-danger'); this.classList.remove('btn-outline-warning');"
                         onmouseout="this.classList.add('btn-outline-warning'); this.classList.remove('btn-danger');"
@@ -95,13 +95,14 @@
 </main>
 
 <!-- Footer -->
-<footer class="bg-dark text-white text-center py-3 mt-auto">
+<footer class="text-white text-center py-3 mt-auto" style="background: black; font-size: 18px;">
     <div class="container">
         <p class="mb-0">&copy; 2024 My Blog. Все права защищены.</p>
     </div>
 </footer>
 
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<!-- Скрипты для Bootstrap 4 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>

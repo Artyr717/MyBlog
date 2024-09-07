@@ -3,28 +3,42 @@ from datetime import datetime
 from urllib.parse import urlsplit
 
 import sqlalchemy as sa
+from flask import current_app
 from flask import render_template, url_for, redirect, flash, request
 from flask_login import current_user, login_user, logout_user, login_required
+from sqlalchemy import func
 from user_agents import parse
 from werkzeug.utils import secure_filename
 
 from app import app, db, moscow_tz
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, CreatePostForm, EditPostForm
-from .models import User, Post, Like
+from .models import User, Post, Like, FeaturedPosts
 
 
 @app.route("/")
 @app.route("/index")
 def index():
+    featured_posts = (
+        db.session.query(Post)
+        .join(FeaturedPosts, Post.id == FeaturedPosts.post_id)  # Присоединяем таблицу FeaturedPosts
+        .order_by(Post.timestamp.desc())  # Сортировка по дате публикации
+        .all()  # Получаем все результаты
+    )
+    popular_posts = (db.session.query(Post)
+                     .outerjoin(Like)
+                     .group_by(Post.id)
+                     .order_by(func.count(Like.id).desc())
+                     .limit(20)
+                     .all())
     user_agent = parse(request.headers.get('User-Agent'))
     if user_agent.is_mobile:
         template = 'mobile_index.html'
     else:
         template = 'desktop_index.html'
     page = request.args.get("page", 1, type=int)
-    per_page = 5
+    per_page = 4
     posts = Post.query.order_by(Post.timestamp.desc()).paginate(page=page, per_page=per_page, error_out=False)
-    return render_template(template, posts=posts)
+    return render_template(template, posts=posts, popular_posts=popular_posts, featured_posts=featured_posts)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -94,14 +108,23 @@ def edit_profile():
             file = request.files['avatar']
             if file and file.filename != '':
                 filename = secure_filename(file.filename)
-                upload_folder = os.path.join(app.static_folder, 'uploads')
+                upload_folder = os.path.join(current_app.static_folder, 'uploads')
 
+                # Удаление старого аватара, если это не аватар по умолчанию
+                if current_user.avatar != 'default_avatar.png':
+                    old_avatar_path = os.path.join(upload_folder, current_user.avatar)
+                    if os.path.exists(old_avatar_path):
+                        os.remove(old_avatar_path)
+
+                # Создаем папку, если она не существует
                 if not os.path.exists(upload_folder):
                     os.makedirs(upload_folder)
 
+                # Сохранение нового аватара
                 file_path = os.path.join(upload_folder, filename)
                 file.save(file_path)
 
+                # Обновление пути к новому аватару
                 current_user.avatar = filename
 
         db.session.commit()
@@ -180,7 +203,8 @@ def edit_post(post_id):
 def delete_post(post_id):
     post = Post.query.get_or_404(post_id)
 
-    if post.author != current_user:
+    # Проверяем, является ли текущий пользователь владельцем поста или администратором
+    if post.author != current_user and not current_user.is_admin:
         flash('You are not authorized to delete this post.', 'danger')
         return redirect(url_for('index'))
 
@@ -192,7 +216,8 @@ def delete_post(post_id):
         db.session.rollback()
         flash(f'Error deleting post: {str(e)}', 'danger')
 
-    return redirect(url_for('user', username=current_user.username))
+    # Возвращаемся на страницу пользователя, который создал пост
+    return redirect(url_for('user', username=post.author.username))
 
 
 @app.route('/like/<int:post_id>', methods=['POST'])
@@ -209,6 +234,24 @@ def like(post_id):
         like = Like(post_id=post_id, user_id=current_user.id)
         db.session.add(like)
         flash('You liked the post.', 'success')
+
+    db.session.commit()
+    return redirect(url_for('post_detail', post_id=post_id))
+
+
+@app.route('/featured/<int:post_id>', methods=['POST'])
+@login_required
+def featured_posts(post_id):
+    post = Post.query.get_or_404(post_id)
+    if current_user.is_featured(post):
+        featured = db.session.scalar(
+            sa.select(FeaturedPosts).where(FeaturedPosts.post_id == post_id, FeaturedPosts.user_id == current_user.id))
+        db.session.delete(featured)
+        flash('Removed from your featured posts', 'success')
+    else:
+        featured = FeaturedPosts(post_id=post_id, user_id=current_user.id)
+        db.session.add(featured)
+        flash("This post is now a featured post.", 'success')
 
     db.session.commit()
     return redirect(url_for('post_detail', post_id=post_id))

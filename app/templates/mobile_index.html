@@ -4,94 +4,227 @@
 
 {% block content %}
 <div class="container mt-5">
-    {% if posts.items %}
-    <h1 class="text-center mb-4">Latest Posts</h1>
     <div class="row">
-        {% for post in posts.items %}
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
-            <div class="card border-light shadow-sm rounded-3">
-                {% if post.image %}
-                <img src="{{ post.image }}" class="card-img-top rounded-top-3" alt="{{ post.title }}">
-                {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ post.title }}</h5>
-                    <p class="card-text">{{ post.preview }}</p>
-                </div>
-                <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-center bg-light rounded-bottom-3">
-                    <div class="d-flex align-items-center mb-2 mb-md-0">
-                        <!-- Display User Avatar -->
-                        {% if post.author.avatar %}
-                        <img src="{{ url_for('static', filename='uploads/' + post.author.avatar) }}"
-                             alt="{{ post.author.username }}'s Avatar"
-                             class="rounded-circle"
-                             style="width: 30px; height: 30px; margin-right: 10px;">
-                        {% else %}
-                        <img src="{{ url_for('static', filename='default-avatar.png') }}"
-                             alt="Default Avatar"
-                             class="rounded-circle"
-                             style="width: 30px; height: 30px; margin-right: 10px;">
-                        {% endif %}
-                        <span class="me-2">{{ post.formatted_timestamp() }}</span>
-                        <!-- Custom separator -->
-                        <span class="text-muted mx-2"
-                              style="border-left: 1px solid #dee2e6; height: 20px; align-self: center;"></span>
-                        <span>
-                            <a href="{{ url_for('user', username=post.author.username) }}" class="text-decoration-none">
-                                {{ post.author.username }}
-                            </a>
-                        </span>
-                    </div>
-                    <a href="{{ url_for('post_detail', post_id=post.id) }}" class="btn btn-primary btn-sm mt-2 mt-md-0">
-                        <i class="fas fa-book-open"></i> Read more
+        <!-- Main Content Area -->
+        <div class="col-md-8">
+            {% if posts.items %}
+            <h2 class="bg-secondary text-white text-center"
+                style="border-radius: 5px; padding: 10px 15px; margin: 0 0 20px 0;">All Posts</h2>
+            <div class="row justify-content-center">
+                {% for post in posts.items %}
+                <div class="col-md-12 mb-4">
+                    <a href="{{ url_for('post_detail', post_id=post.id) }}"
+                       class="text-decoration-none text-dark border-4">
+                        <div class="card shadow-lg border-light rounded-4 post-card position-relative">
+                            <!-- Post Image -->
+                            {% if post.image %}
+                            <img src="{{ post.image }}" class="card-img-top rounded-top-4" alt="{{ post.title }}"
+                                 style="max-height: 200px; object-fit: cover;">
+                            {% endif %}
+
+                            <!-- Post Content -->
+                            <div class="card-header text-center bg-warning">
+                                <h5 class="my-0"><b>{{ post.title }}</b></h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">{{ post.preview }}</p>
+                            </div>
+
+                            <!-- Post Footer -->
+                            <div class="card-footer bg-light text-muted d-flex justify-content-center align-items-center rounded-bottom-4">
+                                <!-- Центрирование: Аватарка, Ник и Дата -->
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ url_for('static', filename='uploads/' + post.author.avatar if post.author.avatar else 'default-avatar.png') }}"
+                                         alt="{{ post.author.username }}'s Avatar"
+                                         class="rounded-circle"
+                                         style="width: 30px; height: 30px; margin-right: 10px;">
+                                    <b><a href="{{ url_for('user', username=post.author.username) }}"
+                                          class="text-decoration-none badge bg-info text-white">{{
+                                        post.author.username }}</a></b>
+                                    <span class="mx-3">|</span>
+                                    <b>{{ post.formatted_timestamp() }}</b>
+                                </div>
+                            </div>
+                        </div>
                     </a>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if posts.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link bg-success text-white" href="{{ url_for('index', page=posts.prev_num) }}"
+                           aria-label="Previous">
+                            <span aria-hidden="true">&laquo; Previous</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% for page_num in range(1, posts.pages + 1) %}
+                    <li class="page-item {% if page_num == posts.page %}active{% endif %}">
+                        <a class="page-link {% if page_num == posts.page %}bg-success text-white{% else %}text-dark{% endif %}"
+                           href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% endfor %}
+                    {% if posts.has_next %}
+                    <li class="page-item">
+                        <a class="page-link bg-success text-white" href="{{ url_for('index', page=posts.next_num) }}"
+                           aria-label="Next">
+                            <span aria-hidden="true">Next &raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+            {% else %}
+            <!-- Empty State Message -->
+            <div class="text-center mt-5 mb-5">
+                <h4>😔 Sorry, there's nothing here yet.</h4>
+                <p class="text-muted">Why not create your first post?</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar Area -->
+        <div class="col-lg-4 col-md-4 col-sm-12 col-12">
+            <div class="position-sticky" style="top: 20px; padding-bottom: 50px;">
+                <!-- Popular Posts -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-secondary text-white text-center">
+                        <h6 class="mb-0"><i class="fas fa-fire-alt"></i> Popular Posts</h6>
+                    </div>
+                    <div class="card-body p-3" style="max-height: 500px; overflow-y: auto;">
+                        {% if popular_posts %}
+                        <div class="row">
+                            {% for post in popular_posts %}
+                            <div class="col-12 mb-3 post-card">
+                                <a href="{{ url_for('post_detail', post_id=post.id) }}"
+                                   class="text-dark text-decoration-none">
+                                    <div class="card shadow-sm h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ post.title|truncate(24) }}</h6>
+                                            <p class="card-text">
+                                                <small>by</small>
+                                                <small class="text-warning">
+                                                    <a class="text-decoration-none"
+                                                       href="{{ url_for('user', username=post.author.username) }}">
+                                                        {{ post.author.username }}
+                                                    </a>
+                                                </small>
+                                            </p>
+                                        </div>
+                                        <div class="card-footer d-flex justify-content-between align-items-center bg-light">
+                                            <span class="small text-muted">{{ post.formatted_timestamp() }}</span>
+                                            <span class="badge bg-danger text-white">{{ post.like_count() }} likes</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="small text-muted text-center">No popular posts available.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!--Featured Posts-->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-secondary text-white text-center">
+                        <h6 class="mb-0"><i class="fas  fa-bookmark"></i> Featured Posts</h6>
+                    </div>
+                    <div class="card-body p-3" style="max-height: 500px; overflow-y: auto;">
+                        {% if featured_posts %}
+                        <div class="row">
+                            {% for post in featured_posts %}
+                            <div class="col-12 mb-3 post-card">
+                                <a href="{{ url_for('post_detail', post_id=post.id) }}"
+                                   class="text-dark text-decoration-none">
+                                    <div class="card shadow-sm h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ post.title|truncate(24) }}</h6>
+                                            <p class="card-text">
+                                                <small>by</small>
+                                                <small class="text-warning">
+                                                    <a class="text-decoration-none"
+                                                       href="{{ url_for('user', username=post.author.username) }}">
+                                                        {{ post.author.username }}
+                                                    </a>
+                                                </small>
+                                            </p>
+                                        </div>
+                                        <div class="card-footer d-flex justify-content-between align-items-center bg-light">
+                                            <span class="small text-muted">{{ post.formatted_timestamp() }}</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="small text-muted text-center">No featured posts available.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Categories -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-secondary text-white text-center">
+                        <h6 class="mb-0"><i class="fas fa-tags"></i> Categories</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <ul class="list-unstyled">
+                            <!-- Iterate through categories dynamically if available -->
+                            <li class="mb-2">
+                                <a href="#" class="text-decoration-none text-dark">
+                                    <i class="fas fa-chevron-right"></i> Category 1
+                                </a>
+                            </li>
+                            <li class="mb-2">
+                                <a href="#" class="text-decoration-none text-dark">
+                                    <i class="fas fa-chevron-right"></i> Category 2
+                                </a>
+                            </li>
+                            <li class="mb-2">
+                                <a href="#" class="text-decoration-none text-dark">
+                                    <i class="fas fa-chevron-right"></i> Category 3
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
-        {% endfor %}
     </div>
-
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center mt-4">
-            {% if posts.has_prev %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('index', page=posts.prev_num) }}" aria-label="Previous">
-                    <span aria-hidden="true">&laquo; Previous</span>
-                </a>
-            </li>
-            {% endif %}
-            {% for page_num in range(1, posts.pages + 1) %}
-            <li class="page-item {% if page_num == posts.page %}active{% endif %}">
-                <a class="page-link" href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a>
-            </li>
-            {% endfor %}
-            {% if posts.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('index', page=posts.next_num) }}" aria-label="Next">
-                    <span aria-hidden="true">Next &raquo;</span>
-                </a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% else %}
-    <div class="text-center mt-5 mb-5">
-        <h4>😔 Sorry, there's nothing here yet.</h4>
-    </div>
-    {% endif %}
 </div>
 
 <!-- Fixed "Create Post" Button -->
-<div class="position-fixed bottom-0 end-0 mb-4 me-4 d-none d-md-block">
+<div class="fixed-bottom mb-4 mr-4 text-right">
     <a href="{{ url_for('create_post') }}" class="btn btn-success btn-lg shadow-lg">
         <i class="fas fa-plus"></i> Create Post
     </a>
 </div>
+<style>
+    .post-card {
+        transition: transform 0.2s, box-shadow 0.4s;
+    }
 
-<!-- Mobile Button -->
-<div class="fixed-bottom d-md-none text-center mb-3">
-    <a href="{{ url_for('create_post') }}" class="btn btn-success btn-lg shadow-lg rounded-circle">
-        <i class="fas fa-plus"></i>
-    </a>
-</div>
+    .post-card:hover {
+        transform: translateY(-5px);
+    }
 
+    /* Ensure the entire card is clickable */
+    a.text-decoration-none {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    a.text-decoration-none:hover {
+        text-decoration: none;
+    }
+
+</style>
 {% endblock %}

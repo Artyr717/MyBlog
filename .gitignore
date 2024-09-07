@@ -3,5 +3,5 @@
 /app/static/uploads/Screenshot_2024-09-01-13-03-46-384_com.android.chrome.jpg
 /app/static/uploads/spongebob-spongebob-squarepants.gif
 /app/static/uploads/wavy-black-white-background_1.jpg
-__pycache__/blog.cpython-312.pyc
-app.db
+/app.db
+/migrations/
